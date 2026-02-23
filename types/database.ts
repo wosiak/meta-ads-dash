@@ -108,6 +108,24 @@ export interface SyncLog {
   completed_at?: string
 }
 
+// Métricas por campanha (nível campaign da Meta API)
+export interface CampaignMetrics {
+  metaCampaignId: string
+  campaignName:   string
+  campaignStatus: string
+  totalSpend:     number
+  totalLeads:     number
+  totalMessages:  number
+  totalPurchases: number
+  totalResults:   number
+  avgCPL:         number
+  avgCTR:         number
+  totalReach:     number
+  avgFrequency:   number
+  totalImpressions: number
+  avgCPM:         number
+}
+
 // Tipos agregados para o dashboard
 export interface DashboardMetrics {
   totalSpend: number
@@ -116,6 +134,8 @@ export interface DashboardMetrics {
   avgCTR: number
   totalReach: number
   avgFrequency: number
+  totalImpressions: number
+  avgCPM: number
 }
 
 export interface TopAd {
