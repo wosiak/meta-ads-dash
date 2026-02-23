@@ -14,6 +14,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Buscar meta_account_id usando o UUID do Supabase
+    const { data: metaAccount, error: accountError } = await supabaseAdmin
+      .from('meta_ad_accounts')
+      .select('meta_account_id')
+      .eq('id', accountId)
+      .single()
+
+    if (accountError || !metaAccount) {
+      return NextResponse.json(
+        { error: 'Account not found in database' },
+        { status: 404 }
+      )
+    }
+
+    const metaAccountId = metaAccount.meta_account_id
+
     // Criar log de sync
     const { data: syncLog } = await supabaseAdmin
       .from('sync_logs')
@@ -26,8 +42,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     try {
-      // Buscar dados da Meta API
-      const data = await fetchAccountInsights(accountId, dateStart, dateStop)
+      // Buscar dados da Meta API usando o meta_account_id correto (ex: act_2491050667800794)
+      const data = await fetchAccountInsights(metaAccountId, dateStart, dateStop)
       
       let recordsSynced = 0
 
@@ -141,19 +157,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         recordsSynced,
+        metaAccountId, // Adicionar para debug
         message: `Sincronizados ${recordsSynced} registros com sucesso`,
       })
 
     } catch (error: any) {
       // Atualizar log de sync como erro
-      await supabaseAdmin
-        .from('sync_logs')
-        .update({
-          status: 'error',
-          error_message: error.message,
-          completed_at: new Date().toISOString(),
-        })
-        .eq('id', syncLog.id)
+      if (syncLog?.id) {
+        await supabaseAdmin
+          .from('sync_logs')
+          .update({
+            status: 'error',
+            error_message: error.message,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', syncLog.id)
+      }
 
       throw error
     }
