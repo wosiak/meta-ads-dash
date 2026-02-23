@@ -65,7 +65,8 @@ export function SpendChart({ data }: SpendChartProps) {
               tick={{ fontSize: 12 }}
             />
             <Tooltip 
-              formatter={(value: number, name: string) => {
+              formatter={(value: number | undefined, name: string) => {
+                if (value === undefined) return ''
                 if (name === 'Investimento' || name === 'CPL') {
                   return formatCurrency(value)
                 }
