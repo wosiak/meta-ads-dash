@@ -177,7 +177,7 @@ vercel
 
 ## 🤝 Contribuindo
 
-Desenvolvido por Eduardo Wosiak e Gabriel.
+Desenvolvido por Eduardo Wosiak e Gabriel Afinovicz.
 
 ## 📄 Licença
 
