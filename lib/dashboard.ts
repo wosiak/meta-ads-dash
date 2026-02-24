@@ -2,6 +2,7 @@ import { supabaseAdmin } from './supabase'
 import type { DashboardMetrics, TopAd, ChartData, MetaAdAccount, CampaignMetrics } from '@/types/database'
 import {
   fetchCampaignLevelInsights,
+  fetchAdLevelInsights,
   fetchAdAccountsFromMeta,
   fetchCampaignDailyInsights,
   fetchAccountDailyInsights,
@@ -422,6 +423,114 @@ export async function getCachedOrLiveCampaignMetrics(
   } catch (error) {
     console.error('getCachedOrLiveCampaignMetrics error:', error)
     return []
+  }
+}
+
+// ─── Cache de métricas por anúncio (Diagnóstico) ──────────────────────────────
+
+export interface AdMetrics {
+  metaAdId:     string
+  adName:       string
+  adStatus:     string
+  campaignId:   string
+  campaignName: string
+  adSetId:      string
+  adSetName:    string
+  spend:        number
+  results:      number
+  cpl:          number
+}
+
+/**
+ * Retorna métricas de todos os anúncios da conta para o período solicitado.
+ * Cache diário: se já existir registro para (conta, from, to) feito hoje, retorna do cache.
+ */
+export async function getCachedOrLiveAdMetrics(
+  accountId: string,
+  dateFrom:  string,
+  dateTo:    string,
+): Promise<AdMetrics[]> {
+  try {
+    const todayStart = new Date()
+    todayStart.setHours(0, 0, 0, 0)
+
+    const { data: cached } = await supabaseAdmin
+      .from('ad_metrics_cache')
+      .select('*')
+      .eq('meta_ad_account_id', accountId)
+      .eq('date_from', dateFrom)
+      .eq('date_to', dateTo)
+      .gte('synced_at', todayStart.toISOString())
+      .order('spend', { ascending: false })
+
+    if (cached && cached.length > 0) {
+      return cached.map(mapCacheRowToAdMetrics)
+    }
+
+    const { data: account } = await supabaseAdmin
+      .from('meta_ad_accounts')
+      .select('meta_account_id')
+      .eq('id', accountId)
+      .single()
+
+    if (!account) throw new Error(`Conta ${accountId} não encontrada no Supabase`)
+
+    const ads = await fetchAdLevelInsights(account.meta_account_id, dateFrom, dateTo)
+
+    if (ads.length === 0) return []
+
+    const now = new Date().toISOString()
+    const rows = ads.map(a => ({
+      meta_ad_account_id: accountId,
+      meta_ad_id:         a.metaAdId,
+      ad_name:            a.adName,
+      ad_status:          a.adStatus,
+      campaign_id:        a.campaignId,
+      campaign_name:      a.campaignName,
+      adset_id:           a.adSetId,
+      adset_name:         a.adSetName,
+      date_from:          dateFrom,
+      date_to:            dateTo,
+      spend:              a.spend,
+      results:            a.results,
+      cost_per_result:    a.cpl,
+      synced_at:          now,
+    }))
+
+    await supabaseAdmin
+      .from('ad_metrics_cache')
+      .upsert(rows, { onConflict: 'meta_ad_account_id,meta_ad_id,date_from,date_to', ignoreDuplicates: false })
+
+    return ads.map(a => ({
+      metaAdId:     a.metaAdId,
+      adName:       a.adName,
+      adStatus:     a.adStatus,
+      campaignId:   a.campaignId,
+      campaignName: a.campaignName,
+      adSetId:      a.adSetId,
+      adSetName:    a.adSetName,
+      spend:        a.spend,
+      results:      a.results,
+      cpl:          a.cpl,
+    }))
+  } catch (error) {
+    console.error('getCachedOrLiveAdMetrics error:', error)
+    return []
+  }
+}
+
+function mapCacheRowToAdMetrics(row: Record<string, unknown>): AdMetrics {
+  return {
+    metaAdId:     String(row.meta_ad_id),
+    adName:       String(row.ad_name),
+    adStatus:     String(row.ad_status ?? ''),
+    campaignId:   String(row.campaign_id   ?? ''),
+    campaignName: String(row.campaign_name ?? ''),
+    adSetId:      String(row.adset_id      ?? ''),
+    adSetName:    String(row.adset_name    ?? ''),
+    spend:        Number(row.spend),
+    results:      Number(row.results),
+    cpl:          Number(row.cost_per_result),
   }
 }
 

@@ -23,12 +23,19 @@ async function main() {
     .neq('id', '00000000-0000-0000-0000-000000000000')
     .select('id', { count: 'exact', head: true })
 
-  if (e1 || e2) {
-    console.error('Erros:', e1, e2)
+  const { error: e3 } = await client
+    .from('ad_metrics_cache')
+    .delete()
+    .neq('id', '00000000-0000-0000-0000-000000000000')
+    .select('id', { count: 'exact', head: true })
+
+  if (e1 || e2 || e3) {
+    console.error('Erros:', e1, e2, e3)
   } else {
     console.log('Cache limpo com sucesso!')
     console.log('account_metrics_cache: registros removidos')
     console.log('campaign_metrics_cache: registros removidos')
+    console.log('ad_metrics_cache: registros removidos')
     console.log('\nRecarregue a página para buscar dados atualizados da Meta API.')
   }
 }

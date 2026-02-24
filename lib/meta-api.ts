@@ -122,6 +122,42 @@ export interface MetaAdAccountInfo {
   timezone_name:  string
 }
 
+// ─── Orçamento de campanhas ───────────────────────────────────────────────────
+export interface CampaignBudgetInfo {
+  id:               string
+  name:             string
+  status:           string
+  /** Orçamento diário em centavos (string) — presente apenas se a campanha usar orçamento diário */
+  daily_budget?:    string
+  /** Orçamento vitalício em centavos (string) — presente apenas se a campanha usar orçamento vitalício */
+  lifetime_budget?: string
+}
+
+/**
+ * Busca orçamentos das campanhas de uma conta.
+ * Retorna todas as campanhas independente de status.
+ */
+export async function fetchCampaignBudgets(
+  metaAccountId: string,
+): Promise<CampaignBudgetInfo[]> {
+  const accountId = metaAccountId.startsWith('act_')
+    ? metaAccountId
+    : `act_${metaAccountId}`
+
+  const fields = 'id,name,status,daily_budget,lifetime_budget'
+  const url    = `${META_API_BASE}/${accountId}/campaigns?fields=${fields}&limit=100&access_token=${META_APP_TOKEN}`
+
+  const response: Response                = await fetch(url, { cache: 'no-store' })
+  const data:     Record<string, unknown> = await response.json()
+
+  if (data.error) {
+    const err = data.error as { message?: string }
+    throw new Error(`Meta API Error (campaign budgets): ${err.message}`)
+  }
+
+  return (data.data as CampaignBudgetInfo[]) ?? []
+}
+
 /**
  * Busca todas as contas de anúncio às quais o token tem acesso.
  * Percorre todas as páginas automaticamente (paginação por cursor).
@@ -297,6 +333,96 @@ export async function fetchCampaignLevelInsights(
 
   // Ordena por gasto decrescente
   return rows.sort((a, b) => b.spend - a.spend)
+}
+
+// ─── Métricas por anúncio ────────────────────────────────────────────────────
+export interface AdInsightSummary {
+  metaAdId:     string
+  adName:       string
+  adStatus:     string
+  campaignId:   string
+  campaignName: string
+  adSetId:      string
+  adSetName:    string
+  spend:        number
+  results:      number
+  cpl:          number
+}
+
+/**
+ * Busca métricas de todos os anúncios de uma conta (level=ad).
+ * Etapa 1: insights com spend > 0 para o período.
+ * Etapa 2: batch de status para os ad_ids retornados.
+ */
+export async function fetchAdLevelInsights(
+  metaAccountId: string,
+  dateFrom:       string,
+  dateTo:         string,
+): Promise<AdInsightSummary[]> {
+  const accountId = metaAccountId.startsWith('act_')
+    ? metaAccountId
+    : `act_${metaAccountId}`
+
+  const fields    = 'ad_id,ad_name,campaign_id,campaign_name,adset_id,adset_name,spend,actions'
+  const timeRange = encodeURIComponent(JSON.stringify({ since: dateFrom, until: dateTo }))
+  const filtering = encodeURIComponent(JSON.stringify([{ field: 'spend', operator: 'GREATER_THAN', value: '0' }]))
+  const url = `${META_API_BASE}/${accountId}/insights?fields=${fields}&time_range=${timeRange}&level=ad&filtering=${filtering}&limit=200&access_token=${META_APP_TOKEN}`
+
+  const response: Response                = await fetch(url, { cache: 'no-store' })
+  const data:     Record<string, unknown> = await response.json()
+
+  if (data.error) {
+    const err = data.error as { message?: string }
+    throw new Error(`Meta API Error (ad level insights): ${err.message}`)
+  }
+
+  const rows = (data.data as Array<Record<string, unknown>>) ?? []
+  if (rows.length === 0) return []
+
+  // Busca effective_status de cada ad via batch endpoint
+  const adIds    = rows.map(r => r.ad_id as string).filter(Boolean)
+  const statusMap: Record<string, string> = {}
+
+  if (adIds.length > 0) {
+    try {
+      const idsParam  = encodeURIComponent(adIds.join(','))
+      const statusUrl = `${META_API_BASE}/?ids=${idsParam}&fields=id,effective_status&access_token=${META_APP_TOKEN}`
+      const sr: Response                = await fetch(statusUrl, { cache: 'no-store' })
+      const sd: Record<string, unknown> = await sr.json()
+      Object.entries(sd).forEach(([id, val]) => {
+        const v = val as { id?: string; effective_status?: string }
+        if (v.effective_status) statusMap[id] = v.effective_status
+      })
+    } catch {
+      // Status indisponível — todos serão tratados como ACTIVE
+    }
+  }
+
+  return rows
+    .map(row => {
+      const actions  = (row.actions as Array<{ action_type: string; value: string }>) ?? []
+      const leads    = sumActions(actions, ['lead', 'onsite_conversion.lead_grouped'])
+      const messages = sumActions(actions, ['onsite_conversion.messaging_conversation_started_7d'])
+      const purchases = sumActions(actions, ['purchase', 'omni_purchase'])
+      const results  = leads || messages || purchases
+      const spend    = parseFloat((row.spend as string) ?? '0')
+      const cpl      = results > 0 ? spend / results : 0
+      const adId     = row.ad_id as string
+
+      return {
+        metaAdId:     adId,
+        adName:       (row.ad_name       as string) ?? 'Anúncio sem nome',
+        adStatus:     statusMap[adId]               ?? 'ACTIVE',
+        campaignId:   (row.campaign_id   as string) ?? '',
+        campaignName: (row.campaign_name as string) ?? '',
+        adSetId:      (row.adset_id      as string) ?? '',
+        adSetName:    (row.adset_name    as string) ?? '',
+        spend,
+        results,
+        cpl,
+      }
+    })
+    .filter(a => a.spend > 0)
 }
 
 // ─── Dados diários de tendência por campanha ─────────────────────────────────

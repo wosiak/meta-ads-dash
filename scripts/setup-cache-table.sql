@@ -121,3 +121,52 @@ CREATE TABLE IF NOT EXISTS campaign_trend_cache (
 
 CREATE INDEX IF NOT EXISTS idx_trend_cache_lookup
   ON campaign_trend_cache (meta_ad_account_id, meta_campaign_id, date_from, date_to);
+
+
+-- ============================================================
+-- Tabela de cache de métricas POR ANÚNCIO (Diagnóstico)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS ad_metrics_cache (
+  id                  UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  meta_ad_account_id  UUID        NOT NULL REFERENCES meta_ad_accounts(id) ON DELETE CASCADE,
+  meta_ad_id          VARCHAR(50) NOT NULL,
+  ad_name             TEXT        NOT NULL,
+  ad_status           TEXT,
+  date_from           DATE        NOT NULL,
+  date_to             DATE        NOT NULL,
+
+  spend               DECIMAL(14, 2)  DEFAULT 0,
+  results             INTEGER         DEFAULT 0,
+  cost_per_result     DECIMAL(12, 4)  DEFAULT 0,
+
+  synced_at           TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT uq_ad_cache_period UNIQUE (meta_ad_account_id, meta_ad_id, date_from, date_to)
+);
+
+CREATE INDEX IF NOT EXISTS idx_ad_cache_account_dates
+  ON ad_metrics_cache (meta_ad_account_id, date_from, date_to);
+
+CREATE INDEX IF NOT EXISTS idx_ad_cache_synced_at
+  ON ad_metrics_cache (synced_at);
+
+
+-- ============================================================
+-- Tabela de configuração de orçamento manual (Pacing)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS budget_config (
+  id                  UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  meta_ad_account_id  UUID        NOT NULL REFERENCES meta_ad_accounts(id) ON DELETE CASCADE,
+  frequency           TEXT        NOT NULL CHECK (frequency IN ('daily', 'weekly', 'monthly')),
+  amount              DECIMAL(14, 2) NOT NULL,
+  date_from           DATE        NOT NULL,
+  date_to             DATE        NOT NULL,
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+
+  CONSTRAINT uq_budget_config_period UNIQUE (meta_ad_account_id, date_from, date_to)
+);
+
+CREATE INDEX IF NOT EXISTS idx_budget_config_account
+  ON budget_config (meta_ad_account_id);
