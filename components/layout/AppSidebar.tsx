@@ -9,7 +9,6 @@ import {
   Layers,
   FileText,
   Image,
-  Filter,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -29,7 +28,6 @@ const navItems: NavItem[] = [
   { icon: Layers, label: 'Conjuntos', path: '/ad-sets' },
   { icon: FileText, label: 'Anúncios', path: '/ads' },
   { icon: Image, label: 'Criativos', path: '/creatives' },
-  { icon: Filter, label: 'Funil', path: '/funnel' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ]
 

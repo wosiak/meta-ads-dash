@@ -143,10 +143,11 @@ export interface TopAd {
   name: string
   imageUrl?: string
   spend: number
-  leads: number
-  cpl: number
+  results: number
+  costPerResult: number
   ctr: number
   reach: number
+  impressions: number
 }
 
 export interface ChartData {

@@ -1,31 +1,15 @@
-'use client'
+import { headers, cookies } from 'next/headers'
+import { getAdAccounts } from '@/lib/dashboard'
+import { SELECTED_ACCOUNT_COOKIE } from '@/lib/constants'
+import { AdsClient } from './AdsClient'
 
-import { useState } from 'react'
-import { DataTable } from '@/components/dashboard/DataTable'
-import { DetailDrawer } from '@/components/dashboard/DetailDrawer'
-import { ads, type EntityRow } from '@/lib/mockData'
+export default async function AdsPage() {
+  const [headersList, cookieStore] = await Promise.all([headers(), cookies()])
+  const clientId = headersList.get('x-client-id') || ''
 
-export default function AdsPage() {
-  const [selected, setSelected] = useState<EntityRow | null>(null)
+  const accounts        = clientId ? await getAdAccounts(clientId) : []
+  const cookieAccountId = cookieStore.get(SELECTED_ACCOUNT_COOKIE)?.value
+  const accountId       = accounts.find(a => a.id === cookieAccountId)?.id ?? accounts[0]?.id ?? ''
 
-  return (
-    <div className="space-y-4 animate-fade-in">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-foreground">Anúncios</h2>
-        <span className="text-sm text-muted-foreground">{ads.length} itens</span>
-      </div>
-
-      <DataTable
-        data={ads}
-        cplTarget={20}
-        onRowClick={(row) => setSelected(row)}
-      />
-
-      <DetailDrawer
-        row={selected}
-        open={!!selected}
-        onClose={() => setSelected(null)}
-      />
-    </div>
-  )
+  return <AdsClient accountId={accountId} />
 }

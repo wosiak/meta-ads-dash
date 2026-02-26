@@ -68,8 +68,36 @@
 }
 
 /* ============================================================
-   DESIGN SYSTEM — Dark BI theme with teal accent
+   DESIGN SYSTEM — Dark BI theme (default) + Light variant
    ============================================================ */
+
+/* Light theme overrides — applied when <html class="light"> */
+html.light {
+  --background: hsl(220, 25%, 96%);
+  --foreground: hsl(222, 30%, 8%);
+  --card: hsl(0, 0%, 100%);
+  --card-foreground: hsl(222, 30%, 8%);
+  --popover: hsl(0, 0%, 100%);
+  --popover-foreground: hsl(222, 30%, 8%);
+
+  --primary-foreground: hsl(0, 0%, 100%);
+  --accent-foreground: hsl(0, 0%, 100%);
+
+  --secondary: hsl(220, 20%, 91%);
+  --secondary-foreground: hsl(222, 25%, 12%);
+  --muted: hsl(220, 15%, 88%);
+  --muted-foreground: hsl(215, 15%, 42%);
+
+  --border: hsl(220, 15%, 84%);
+  --input: hsl(220, 15%, 87%);
+
+  --sidebar: hsl(222, 25%, 94%);
+  --sidebar-foreground: hsl(215, 20%, 32%);
+  --sidebar-accent: hsl(220, 20%, 88%);
+  --sidebar-accent-foreground: hsl(222, 30%, 8%);
+  --sidebar-border: hsl(220, 15%, 85%);
+}
+
 :root {
   --radius: 0.75rem;
 

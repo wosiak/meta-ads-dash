@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { Download, Share2, SlidersHorizontal, RefreshCw, Search } from 'lucide-react'
+import { SlidersHorizontal, RefreshCw, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -224,16 +224,6 @@ export function TopBar({ accounts = [], selectedAccountId }: TopBarProps) {
 
 
         <div className="flex-1" />
-
-        {/* Actions */}
-        <Button variant="ghost" size="sm" className="h-9 text-muted-foreground hover:text-foreground gap-1.5 hidden sm:flex">
-          <Download className="h-4 w-4" />
-          <span className="hidden md:inline">Exportar</span>
-        </Button>
-        <Button variant="ghost" size="sm" className="h-9 text-muted-foreground hover:text-foreground gap-1.5 hidden sm:flex">
-          <Share2 className="h-4 w-4" />
-          <span className="hidden md:inline">Compartilhar</span>
-        </Button>
       </div>
 
       {/* Expanded filters row */}
