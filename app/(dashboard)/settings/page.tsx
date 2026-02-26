@@ -174,7 +174,6 @@ export default function SettingsPage() {
                     className="h-9 w-9 rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all"
                     style={{
                       backgroundColor: palette.hex,
-                      ringColor: isActive ? palette.hex : 'transparent',
                       outline: isActive ? `2px solid ${palette.hex}` : '2px solid transparent',
                       outlineOffset: '2px',
                     }}
