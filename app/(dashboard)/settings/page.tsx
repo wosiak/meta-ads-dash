@@ -2,36 +2,8 @@
 
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
-import { Moon, Sun, Monitor, Check, Palette, Monitor as MonitorIcon } from 'lucide-react'
+import { Moon, Sun, Monitor, Check, Monitor as MonitorIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-/* ------------------------------------------------------------------ */
-/*  Accent color palettes                                               */
-/* ------------------------------------------------------------------ */
-const PALETTES = [
-  { id: 'teal',    name: 'Teal',       value: '172, 66%, 50%', hex: '#2dd4bf' },
-  { id: 'violet',  name: 'Violeta',    value: '262, 83%, 63%', hex: '#a78bfa' },
-  { id: 'blue',    name: 'Azul',       value: '217, 91%, 60%', hex: '#60a5fa' },
-  { id: 'rose',    name: 'Rosa',       value: '348, 83%, 62%', hex: '#fb7185' },
-  { id: 'amber',   name: 'Âmbar',     value: '38, 92%, 52%',  hex: '#fbbf24' },
-  { id: 'emerald', name: 'Esmeralda', value: '152, 76%, 42%', hex: '#34d399' },
-  { id: 'indigo',  name: 'Índigo',    value: '234, 89%, 65%', hex: '#818cf8' },
-  { id: 'coral',   name: 'Coral',     value: '22, 93%, 55%',  hex: '#fb923c' },
-] as const
-
-type PaletteId = (typeof PALETTES)[number]['id']
-
-function applyAccent(palette: (typeof PALETTES)[number]) {
-  const val = `hsl(${palette.value})`
-  const root = document.documentElement
-  root.style.setProperty('--primary', val)
-  root.style.setProperty('--accent', val)
-  root.style.setProperty('--ring', val)
-  root.style.setProperty('--sidebar-primary', val)
-  root.style.setProperty('--sidebar-ring', val)
-  root.style.setProperty('--chart-1', val)
-  localStorage.setItem('accent-color', palette.id)
-}
 
 /* ------------------------------------------------------------------ */
 /*  Settings page                                                       */
@@ -39,20 +11,10 @@ function applyAccent(palette: (typeof PALETTES)[number]) {
 export default function SettingsPage() {
   const { theme, setTheme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
-  const [activeAccent, setActiveAccent] = useState<PaletteId>('teal')
 
   useEffect(() => {
     setMounted(true)
-    const saved = localStorage.getItem('accent-color') as PaletteId | null
-    if (saved && PALETTES.some(p => p.id === saved)) {
-      setActiveAccent(saved)
-    }
   }, [])
-
-  function handleAccentChange(palette: (typeof PALETTES)[number]) {
-    setActiveAccent(palette.id)
-    applyAccent(palette)
-  }
 
   const THEME_OPTIONS = [
     {
@@ -140,67 +102,6 @@ export default function SettingsPage() {
             </span>
           </p>
         )}
-      </section>
-
-      <div className="border-t border-border" />
-
-      {/* ---- Accent color section ---- */}
-      <section className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Palette className="h-4 w-4 text-primary" />
-          <h3 className="text-sm font-semibold text-foreground">Cor de destaque</h3>
-        </div>
-        <p className="text-xs text-muted-foreground -mt-1">
-          Define a cor principal usada em botões, ícones ativos e destaques visuais.
-        </p>
-
-        <div className="grid grid-cols-4 gap-3">
-          {PALETTES.map((palette) => {
-            const isActive = activeAccent === palette.id
-            return (
-              <button
-                key={palette.id}
-                onClick={() => handleAccentChange(palette)}
-                className={cn(
-                  'flex flex-col items-center gap-2 p-3 rounded-lg border transition-all duration-150 cursor-pointer',
-                  isActive
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border bg-card hover:border-primary/40'
-                )}
-              >
-                {/* Color swatch */}
-                <div className="relative">
-                  <div
-                    className="h-9 w-9 rounded-full shadow-sm ring-2 ring-offset-2 ring-offset-card transition-all"
-                    style={{
-                      backgroundColor: palette.hex,
-                      outline: isActive ? `2px solid ${palette.hex}` : '2px solid transparent',
-                      outlineOffset: '2px',
-                    }}
-                  />
-                  {isActive && (
-                    <span
-                      className="absolute inset-0 flex items-center justify-center rounded-full"
-                    >
-                      <Check
-                        className="h-4 w-4"
-                        style={{ color: '#fff', filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.5))' }}
-                      />
-                    </span>
-                  )}
-                </div>
-                <span
-                  className={cn(
-                    'text-xs font-medium',
-                    isActive ? 'text-primary' : 'text-muted-foreground'
-                  )}
-                >
-                  {palette.name}
-                </span>
-              </button>
-            )
-          })}
-        </div>
       </section>
 
     </div>

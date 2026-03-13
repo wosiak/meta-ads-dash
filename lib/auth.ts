@@ -13,10 +13,7 @@ export async function validateClientToken(token: string): Promise<Client | null>
       .eq('status', 'active')
       .single()
 
-    if (error || !data) {
-      return null
-    }
-
+    if (error || !data) return null
     return data as Client
   } catch (error) {
     console.error('Error validating token:', error)
@@ -35,22 +32,10 @@ export async function getClientById(clientId: string): Promise<Client | null> {
       .eq('id', clientId)
       .single()
 
-    if (error || !data) {
-      return null
-    }
-
+    if (error || !data) return null
     return data as Client
   } catch (error) {
     console.error('Error getting client:', error)
     return null
   }
-}
-
-/**
- * Valida se é admin (para área administrativa)
- */
-export async function validateAdminSession(sessionId: string): Promise<boolean> {
-  // TODO: Implementar validação de sessão admin
-  // Por enquanto, retorna false
-  return false
 }

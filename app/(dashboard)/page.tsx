@@ -1,6 +1,5 @@
-import { headers, cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import { getCachedOrLiveCampaignMetrics, getAdAccounts, getCachedOrLiveTopAds, getCachedOrLiveBottomAds } from '@/lib/dashboard'
+import { cookies } from 'next/headers'
+import { getCachedOrLiveCampaignMetrics, getAllAdAccounts, getCachedOrLiveTopAds, getCachedOrLiveBottomAds } from '@/lib/dashboard'
 import { SELECTED_ACCOUNT_COOKIE } from '@/lib/constants'
 import type { CampaignMetrics } from '@/types/database'
 import { DollarSign, Target, TrendingDown, Users, BarChart2, Eye, Activity } from 'lucide-react'
@@ -39,21 +38,14 @@ interface PageProps {
 
 export default async function OverviewPage({ searchParams }: PageProps) {
   const params = await searchParams
-  const headersList = await headers()
   const cookieStore = await cookies()
-
-  const clientId = headersList.get('x-client-id')
-
-  if (!clientId) {
-    redirect('/login')
-  }
 
   const defaults = periodToDates(DEFAULT_PERIOD)
   const dateFrom = params.from || defaults.from
   const dateTo = params.to || defaults.to
 
-  // Resolve conta efetiva: cookie → primeira conta disponível → sem filtro
-  const accounts = await getAdAccounts(clientId)
+  // Carrega todas as contas disponíveis
+  const accounts = await getAllAdAccounts()
   const cookieAccountId = cookieStore.get(SELECTED_ACCOUNT_COOKIE)?.value
   const effectiveAccountId =
     accounts.find(a => a.id === cookieAccountId)?.id ?? accounts[0]?.id

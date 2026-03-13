@@ -2,17 +2,16 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard,
   Megaphone,
   Layers,
   FileText,
-  Image,
   Settings,
   ChevronLeft,
   ChevronRight,
-  Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -27,7 +26,6 @@ const navItems: NavItem[] = [
   { icon: Megaphone, label: 'Campanhas', path: '/campaigns' },
   { icon: Layers, label: 'Conjuntos', path: '/ad-sets' },
   { icon: FileText, label: 'Anúncios', path: '/ads' },
-  { icon: Image, label: 'Criativos', path: '/creatives' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
 ]
 
@@ -44,12 +42,14 @@ export function AppSidebar() {
     >
       {/* Logo / Brand */}
       <div className="flex items-center h-14 px-4 border-b border-sidebar-border">
-        <Zap className="h-5 w-5 text-primary shrink-0" />
-        {!collapsed && (
-          <span className="ml-2 text-sm font-bold text-foreground whitespace-nowrap">
-            Meta Ads
-          </span>
-        )}
+        <Image
+          src="/metaone-logo.png"
+          alt="MetaOne"
+          width={collapsed ? 32 : 120}
+          height={32}
+          className="object-contain object-left"
+          priority
+        />
       </div>
 
       {/* Navigation */}

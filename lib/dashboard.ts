@@ -79,6 +79,56 @@ export async function syncAdAccountsForClient(clientId: string): Promise<MetaAdA
 }
 
 /**
+ * Busca todas as contas de anúncio de TODOS os clientes (uso exclusivo do admin)
+ */
+export async function getAllAdAccounts(): Promise<MetaAdAccount[]> {
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('meta_ad_accounts')
+      .select('id, client_id, meta_account_id, account_name, account_status, currency, last_sync_at, created_at, updated_at')
+      .order('account_name')
+
+    if (error || !data) return []
+    return (data as MetaAdAccount[]).filter(
+      a => !EXCLUDED_META_ACCOUNT_IDS.has(a.meta_account_id)
+    )
+  } catch (error) {
+    console.error('Error getting all ad accounts:', error)
+    return []
+  }
+}
+
+/**
+ * Garante que existe pelo menos um cliente no banco (para o admin poder sincronizar).
+ * Cria um cliente padrão "MetaOne Agência" se não existir nenhum.
+ */
+export async function ensureDefaultClient(): Promise<string> {
+  const { data: existing } = await supabaseAdmin
+    .from('clients')
+    .select('id')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .single()
+
+  if (existing?.id) return existing.id
+
+  // Cria cliente padrão
+  const { data: created, error } = await supabaseAdmin
+    .from('clients')
+    .insert({
+      name: 'MetaOne Agência',
+      slug: 'metaone-agencia',
+      access_token: crypto.randomUUID(),
+      status: 'active',
+    })
+    .select('id')
+    .single()
+
+  if (error || !created) throw new Error('Falha ao criar cliente padrão: ' + error?.message)
+  return created.id
+}
+
+/**
  * Busca todas as contas de anúncio de um cliente
  */
 export async function getAdAccounts(clientId: string): Promise<MetaAdAccount[]> {
